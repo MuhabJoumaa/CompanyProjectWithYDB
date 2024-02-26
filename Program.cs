@@ -1,5 +1,6 @@
 using System;
 using System.Data;
+using System.Management.Automation;
 using System.Windows.Forms;
 using Ydb.Sdk.Value;
 
@@ -9,7 +10,7 @@ namespace CompanyProject
     {
         public static readonly string endpoint = "grpcs://ydb.serverless.yandexcloud.net:2135",
             database = "/ru-central1/b1gr17ja2gu5ntlmqlt2/etnhapkn2crippdo1jh0",
-            token = "t1.9euelZrLlpfPzYqVzc2ay8yPz42Tmu3rnpWak5KSjMvMnJiaxo_OnsbPkJ3l8_c1LBNR-e9ONHld_t3z93VaEFH57040eV3-zef1656VmpXKyZmSxsmSyJ6JkZ7Hl82S7_zF656VmpXKyZmSxsmSyJ6JkZ7Hl82S.rayQzRuGzrEiMJvmaxusPxzsd_m3V5NHwMLSyLAv2lJ462unvrwysQlDZmnqOchFmGSoBj1ciUdkbFDwlTzpCA";
+            token = GetToken("$yandexPassportOauthToken = \"y0_AgAAAABbuA-FAATuwQAAAAD7kCXsAAC2_hK-kipLAZOC9mQf0S9oyOFZmg\"\r\n$Body = @{ yandexPassportOauthToken = \"$yandexPassportOauthToken\" } | ConvertTo-Json -Compress\r\nInvoke-RestMethod -Method 'POST' -Uri 'https://iam.api.cloud.yandex.net/iam/v1/tokens' -Body $Body -ContentType 'Application/json' | Select-Object -ExpandProperty iamToken");
 
         public static DataTable ToDataTable(this ResultSet resultSet)
         {
@@ -97,6 +98,25 @@ namespace CompanyProject
             }
             dataSet.Tables.Add(dataTable);
             return dataSet;
+        }
+
+        private static string GetToken(string script)
+        {
+            using (PowerShell ps = PowerShell.Create())
+            {
+                ps.AddScript(script);
+                var output = ps.Invoke();
+                if (ps.HadErrors)
+                {
+                    string errorMessage = string.Join(Environment.NewLine, ps.Streams.Error);
+                    return $"PowerShell Error: {errorMessage}";
+                }
+                else
+                {
+                    string result = string.Join(Environment.NewLine, output);
+                    return result;
+                }
+            }
         }
         /// <summary>
         /// Главная точка входа для приложения.
